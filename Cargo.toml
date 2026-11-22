@@ -1,0 +1,23 @@
+[package]
+name = "ah-snake"
+version = "0.1.0"
+edition = "2024"
+authors = ["Judah Fuller <judah@judahfuller.com>"]
+description = "Sans-IO Rust codec for Allen & Heath tSnake/dSnake stage-box control messages, host-to-FPGA mailbox framing, and Ethernet header templates"
+license = "GPL-2.0-or-later"
+repository = "https://github.com/JudahZF/ah-snake"
+homepage = "https://github.com/JudahZF/ah-snake"
+readme = "README.md"
+keywords = ["allen-heath", "audio", "tsnake", "dsnake", "pro-audio"]
+categories = ["multimedia::audio", "network-programming", "parser-implementations"]
+
+[dependencies]
+thiserror = "2"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "warn"
