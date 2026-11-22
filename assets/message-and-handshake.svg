@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1200" viewBox="0 0 960 1200" role="img" aria-labelledby="title desc">
+  <title id="title">ah-snake: message layout and stage-box handshake</title>
+  <desc id="desc">Top: the message wire layout. Byte 0 is total length minus 1, byte 1 the destination id (0xff for all), byte 2 the message id, byte 3 the code, bytes 4 and up a payload of at most 21 bytes. MACs go last octet first, multi-byte fields big-endian. Bottom: the handshake. The host broadcasts 2 Discovery, the box answers 12 Discovery Reply, the host sends 3 Assign ID, the box answers 14 Confirmation, the host configures the cards (9 Mic Pre Settings and others), polls 8 Get Device Status and gets 17 Device Status, and sends 10 Channel Names one channel per message.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace; }
+      .title { font-size: 22px; font-weight: 700; fill: #f1f5f9; }
+      .lede { font-size: 13px; fill: #94a3b8; }
+      .sect { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; fill: #64748b; }
+      .h { font-size: 15px; font-weight: 650; fill: #f1f5f9; }
+      .sub { font-size: 12px; fill: #94a3b8; }
+      .body { font-size: 12px; fill: #cbd5e1; }
+      .small { font-size: 10.5px; fill: #94a3b8; }
+      .cellb { font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+      .cell { font-size: 11px; fill: #f1f5f9; }
+      .off { font-size: 10px; fill: #64748b; }
+      .msg { font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+      .det { font-size: 11px; fill: #94a3b8; }
+      .phase { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; fill: #64748b; }
+    </style>
+    <marker id="to-box" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2dd4bf"/>
+    </marker>
+    <marker id="to-host" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="958" height="1198" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+
+  <text x="40" y="50" class="sans title">ah-snake · message and handshake</text>
+  <text x="40" y="76" class="sans lede">One layout in both directions. These are the bytes the host writes to the FPGA mailbox (message.rs).</text>
+
+  <!-- ================= MESSAGE LAYOUT ================= -->
+  <text x="40" y="114" class="sans sect">MESSAGE WIRE LAYOUT · sTSnakeMessage</text>
+  <rect x="40" y="128" width="880" height="356" rx="12" fill="#1e293b" fill-opacity="0.55" stroke="#334155"/>
+
+  <g class="mono">
+    <rect x="64" y="152" width="140" height="56" rx="6" fill="#38bdf8" fill-opacity="0.18" stroke="#38bdf8" stroke-opacity="0.6"/>
+    <rect x="210" y="152" width="140" height="56" rx="6" fill="#a78bfa" fill-opacity="0.18" stroke="#a78bfa" stroke-opacity="0.6"/>
+    <rect x="356" y="152" width="140" height="56" rx="6" fill="#fb7185" fill-opacity="0.18" stroke="#fb7185" stroke-opacity="0.6"/>
+    <rect x="502" y="152" width="140" height="56" rx="6" fill="#fbbf24" fill-opacity="0.18" stroke="#fbbf24" stroke-opacity="0.6"/>
+    <rect x="648" y="152" width="248" height="56" rx="6" fill="#2dd4bf" fill-opacity="0.12" stroke="#2dd4bf" stroke-opacity="0.6" stroke-dasharray="5 3"/>
+    <text x="134" y="177" text-anchor="middle" class="cellb">len − 1</text>
+    <text x="280" y="177" text-anchor="middle" class="cellb">dest</text>
+    <text x="426" y="177" text-anchor="middle" class="cellb">msg_id</text>
+    <text x="572" y="177" text-anchor="middle" class="cellb">code</text>
+    <text x="772" y="177" text-anchor="middle" class="cellb">payload</text>
+    <text x="134" y="197" text-anchor="middle" class="cell" fill="#94a3b8">total length − 1</text>
+    <text x="280" y="197" text-anchor="middle" class="cell" fill="#94a3b8">id · ff = all</text>
+    <text x="426" y="197" text-anchor="middle" class="cell" fill="#94a3b8">echoed by reply</text>
+    <text x="572" y="197" text-anchor="middle" class="cell" fill="#94a3b8">MessageCode</text>
+    <text x="772" y="197" text-anchor="middle" class="cell" fill="#94a3b8">0..21 bytes</text>
+    <text x="134" y="226" text-anchor="middle" class="off">byte 0</text>
+    <text x="280" y="226" text-anchor="middle" class="off">byte 1</text>
+    <text x="426" y="226" text-anchor="middle" class="off">byte 2</text>
+    <text x="572" y="226" text-anchor="middle" class="off">byte 3</text>
+    <text x="772" y="226" text-anchor="middle" class="off">bytes 4..25</text>
+  </g>
+
+  <text x="64" y="256" class="sans body"><tspan fill="#f1f5f9" font-weight="600">Max 25 bytes</tspan> (0x19, SendTSnakeMessage). msg_id ff in a queued message = take one from the pool 0..=254.</text>
+
+  <!-- rules -->
+  <rect x="64" y="272" width="406" height="40" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="80" y="297" class="sans body"><tspan fill="#f1f5f9" font-weight="600">Multi-byte fields:</tspan> big-endian (gain, update address)</text>
+  <rect x="490" y="272" width="406" height="40" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="506" y="297" class="sans body"><tspan fill="#f1f5f9" font-weight="600">MAC in payload:</tspan> last octet first</text>
+
+  <!-- example: discovery reply -->
+  <text x="64" y="342" class="sans h">Example: 12 Discovery Reply, 18 bytes</text>
+  <text x="64" y="361" class="sans sub">MAC 00:04:c4:0d:32:57 sent as 57 32 0d c4 04 00. Other values are placeholders.</text>
+  <g class="mono">
+    <!-- header 4 bytes -->
+    <rect x="64"  y="376" width="36" height="30" rx="4" fill="#38bdf8" fill-opacity="0.22"/>
+    <rect x="104" y="376" width="36" height="30" rx="4" fill="#a78bfa" fill-opacity="0.22"/>
+    <rect x="144" y="376" width="36" height="30" rx="4" fill="#fb7185" fill-opacity="0.22"/>
+    <rect x="184" y="376" width="36" height="30" rx="4" fill="#fbbf24" fill-opacity="0.22"/>
+    <text x="82"  y="396" text-anchor="middle" class="cell">11</text>
+    <text x="122" y="396" text-anchor="middle" class="cell">dst</text>
+    <text x="162" y="396" text-anchor="middle" class="cell">id</text>
+    <text x="202" y="396" text-anchor="middle" class="cell">0c</text>
+    <!-- MAC 6 bytes -->
+    <rect x="232" y="376" width="234" height="30" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <text x="349" y="396" text-anchor="middle" class="cell">57  32  0d  c4  04  00</text>
+    <!-- model -->
+    <rect x="472" y="376" width="60" height="30" rx="4" fill="#2dd4bf" fill-opacity="0.14"/>
+    <text x="502" y="396" text-anchor="middle" class="cell">model</text>
+    <!-- version -->
+    <rect x="538" y="376" width="84" height="30" rx="4" fill="#2dd4bf" fill-opacity="0.14"/>
+    <text x="580" y="396" text-anchor="middle" class="cell">'v' 'v'</text>
+    <!-- port -->
+    <rect x="628" y="376" width="52" height="30" rx="4" fill="#2dd4bf" fill-opacity="0.14"/>
+    <text x="654" y="396" text-anchor="middle" class="cell">port</text>
+    <!-- cards -->
+    <rect x="686" y="376" width="210" height="30" rx="4" fill="#2dd4bf" fill-opacity="0.14"/>
+    <text x="791" y="396" text-anchor="middle" class="cell">card card card card</text>
+
+    <text x="82"  y="424" text-anchor="middle" class="off">0</text>
+    <text x="122" y="424" text-anchor="middle" class="off">1</text>
+    <text x="162" y="424" text-anchor="middle" class="off">2</text>
+    <text x="202" y="424" text-anchor="middle" class="off">3</text>
+    <text x="349" y="424" text-anchor="middle" class="off">4..10  MAC</text>
+    <text x="502" y="424" text-anchor="middle" class="off">10</text>
+    <text x="580" y="424" text-anchor="middle" class="off">11..13 fw</text>
+    <text x="654" y="424" text-anchor="middle" class="off">13</text>
+    <text x="791" y="424" text-anchor="middle" class="off">14..18 card types</text>
+  </g>
+  <text x="64" y="456" class="sans small">fw = 2 ASCII bytes. version[0] &lt; '0' marks a dSnake device (GLD AudioRack); the dLive Surface ignores those replies.</text>
+
+  <!-- ================= HANDSHAKE ================= -->
+  <text x="40" y="524" class="sans sect">HANDSHAKE · S SetupUSBMessageIfRequired (083e9240)</text>
+
+  <!-- legend -->
+  <line x1="610" y1="520" x2="640" y2="520" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="648" y="524" class="sans small">host → box</text>
+  <line x1="740" y1="520" x2="770" y2="520" stroke="#fbbf24" stroke-width="2" marker-end="url(#to-host)"/>
+  <text x="778" y="524" class="sans small">box → host</text>
+
+  <rect x="40" y="538" width="880" height="626" rx="12" fill="#1e293b" fill-opacity="0.55" stroke="#334155"/>
+
+  <!-- actors -->
+  <rect x="150" y="558" width="160" height="44" rx="10" fill="#0f172a" stroke="#94a3b8"/>
+  <text x="230" y="578" text-anchor="middle" class="sans h">Host</text>
+  <text x="230" y="594" text-anchor="middle" class="sans small">console / Surface</text>
+  <rect x="540" y="558" width="160" height="44" rx="10" fill="#0f172a" stroke="#94a3b8"/>
+  <text x="620" y="578" text-anchor="middle" class="sans h">Stage Box</text>
+  <text x="620" y="594" text-anchor="middle" class="sans small">DX / GX device</text>
+
+  <!-- lifelines -->
+  <line x1="230" y1="602" x2="230" y2="1144" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <line x1="620" y1="602" x2="620" y2="1144" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+  <!-- phase labels -->
+  <g class="sans">
+    <path d="M118,628 V744" stroke="#475569" stroke-width="2" fill="none"/>
+    <text x="104" y="690" text-anchor="middle" transform="rotate(-90 104 690)" class="phase">DISCOVER</text>
+    <path d="M118,760 V876" stroke="#475569" stroke-width="2" fill="none"/>
+    <text x="104" y="818" text-anchor="middle" transform="rotate(-90 104 818)" class="phase">JOIN</text>
+    <path d="M118,892 V1136" stroke="#475569" stroke-width="2" fill="none"/>
+    <text x="104" y="1014" text-anchor="middle" transform="rotate(-90 104 1014)" class="phase">RUN</text>
+  </g>
+
+  <!-- 1: Discovery -->
+  <text x="425" y="644" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#5eead4">2</tspan>  Discovery  <tspan class="mono" font-weight="400" fill="#cbd5e1">"DiscoveryV2"</tspan></text>
+  <line x1="232" y1="654" x2="616" y2="654" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="425" y="672" text-anchor="middle" class="sans det">dest ff · every 50 calls (~1 s) · no retries</text>
+
+  <!-- 2: Discovery Reply -->
+  <text x="425" y="706" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#fcd34d">12</tspan>  DiscoveryReply</text>
+  <line x1="618" y1="716" x2="234" y2="716" stroke="#fbbf24" stroke-width="2" marker-end="url(#to-host)"/>
+  <text x="425" y="734" text-anchor="middle" class="sans det">MAC, model, fw, port, cards</text>
+
+  <!-- note: host picks slot -->
+  <rect x="660" y="690" width="244" height="52" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="672" y="710" class="sans small">Host picks a free slot: 0..7 boxes,</text>
+  <text x="672" y="726" class="sans small">8..9 hubs. Known MAC → reason 12.</text>
+
+  <!-- 3: Assign ID -->
+  <text x="425" y="774" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#5eead4">3</tspan>  AssignId</text>
+  <line x1="232" y1="784" x2="616" y2="784" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="425" y="802" text-anchor="middle" class="sans det">MAC, device id = slot · dest ff · 2 retries</text>
+
+  <!-- 4: Confirmation -->
+  <text x="425" y="836" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#fcd34d">14</tspan>  Confirmation</text>
+  <line x1="618" y1="846" x2="234" y2="846" stroke="#fbbf24" stroke-width="2" marker-end="url(#to-host)"/>
+  <text x="425" y="864" text-anchor="middle" class="sans det">echoes the AssignId msg_id → device connected</text>
+
+  <rect x="660" y="760" width="244" height="52" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="672" y="780" class="sans small">No confirmation after the retries:</text>
+  <text x="672" y="796" class="sans small">disconnect, reason 11.</text>
+
+  <!-- 5: Mic Pre Settings (configure cards) -->
+  <text x="425" y="906" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#5eead4">9</tspan>  MicPreSettings</text>
+  <line x1="232" y1="916" x2="616" y2="916" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="425" y="934" text-anchor="middle" class="sans det">configure cards · also 22, 38, 28</text>
+
+  <rect x="660" y="882" width="244" height="68" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="672" y="902" class="sans small">ProcessConfirmation configures cards:</text>
+  <text x="672" y="918" class="sans small">9 Mic Pre, 22 Configure Line Out,</text>
+  <text x="672" y="934" class="sans small">38 Set IO Card type, 28 LCD Brightness.</text>
+
+  <!-- 6: Get Device Status -->
+  <text x="425" y="976" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#5eead4">8</tspan>  GetDeviceStatus</text>
+  <line x1="232" y1="986" x2="616" y2="986" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="425" y="1004" text-anchor="middle" class="sans det">polled after connect</text>
+
+  <!-- 7: Device Status -->
+  <text x="425" y="1038" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#fcd34d">17</tspan>  DeviceStatus</text>
+  <line x1="618" y1="1048" x2="234" y2="1048" stroke="#fbbf24" stroke-width="2" marker-end="url(#to-host)"/>
+  <text x="425" y="1066" text-anchor="middle" class="sans det">device, flags, cards, reconfigure mask</text>
+
+  <rect x="660" y="972" width="244" height="52" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="672" y="992" class="sans small">A box with no traffic for 5 status</text>
+  <text x="672" y="1008" class="sans small">periods is dropped.</text>
+
+  <!-- 8: Channel Names -->
+  <text x="425" y="1100" text-anchor="middle" class="sans msg"><tspan class="mono" fill="#5eead4">10</tspan>  ChannelNames</text>
+  <line x1="232" y1="1110" x2="616" y2="1110" stroke="#2dd4bf" stroke-width="2" marker-end="url(#to-box)"/>
+  <text x="425" y="1128" text-anchor="middle" class="sans det">one channel per message, no checksum</text>
+
+  <rect x="660" y="1084" width="244" height="52" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="672" y="1104" class="sans small">SQ-5 capture: dest ff, every 79.8 ms,</text>
+  <text x="672" y="1120" class="sans small">channels 0..39 in turn.</text>
+</svg>

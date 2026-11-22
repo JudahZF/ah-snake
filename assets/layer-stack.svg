@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="920" viewBox="0 0 960 920" role="img" aria-labelledby="title desc">
+  <title id="title">ah-snake: host-to-wire layers</title>
+  <desc id="desc">message.rs builds the stage-box message, fpga.rs frames it as a host-to-FPGA USB command to the TX mailbox at 0x0700, ether.rs writes a word-swapped header template to header RAM at 0x0300, and the FPGA builds the frame. The same message travels plain in the tail of a 1 Gbit/s gigaACE frame (chunk kind 5) and nibble-swapped in the control area of a 100 Mbit/s dSNAKE / ME-1 frame.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace; }
+      .title { font-size: 22px; font-weight: 700; fill: #f1f5f9; }
+      .lede { font-size: 13px; fill: #94a3b8; }
+      .sect { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; fill: #64748b; }
+      .h { font-size: 15px; font-weight: 650; fill: #f1f5f9; }
+      .sub { font-size: 12px; fill: #94a3b8; }
+      .body { font-size: 12px; fill: #cbd5e1; }
+      .code { font-size: 11.5px; fill: #e2e8f0; }
+      .small { font-size: 10.5px; fill: #94a3b8; }
+      .tag { font-size: 11px; font-weight: 600; }
+      .cell { font-size: 11px; fill: #f1f5f9; }
+      .off { font-size: 10px; fill: #64748b; }
+    </style>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2dd4bf"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arr-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a78bfa"/>
+    </marker>
+  </defs>
+
+  <!-- card -->
+  <rect x="1" y="1" width="958" height="918" rx="18" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+
+  <text x="40" y="50" class="sans title">ah-snake · host-to-wire layers</text>
+  <text x="40" y="76" class="sans lede">The host CPU never builds an Ethernet frame. It writes a header template and message bytes; the FPGA makes the frame.</text>
+
+  <text x="40" y="114" class="sans sect">SOFTWARE · dLIVE SURFACE V2.12</text>
+  <text x="660" y="114" class="sans sect">HARDWARE</text>
+
+  <!-- ============ message.rs ============ -->
+  <rect x="40" y="128" width="280" height="150" rx="12" fill="#2dd4bf" fill-opacity="0.07" stroke="#2dd4bf" stroke-opacity="0.55"/>
+  <rect x="56" y="142" width="86" height="22" rx="11" fill="#2dd4bf" fill-opacity="0.16"/>
+  <text x="99" y="157" text-anchor="middle" class="mono tag" fill="#5eead4">message.rs</text>
+  <text x="56" y="188" class="sans h">Stage-box message</text>
+  <text x="56" y="206" class="mono small">cTSnakeDeviceManager::sTSnakeMessage</text>
+  <!-- byte strip -->
+  <g class="mono">
+    <rect x="56" y="218" width="44" height="26" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="102" y="218" width="40" height="26" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="144" y="218" width="30" height="26" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="176" y="218" width="40" height="26" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="218" y="218" width="86" height="26" rx="4" fill="#2dd4bf" fill-opacity="0.10" stroke="#2dd4bf" stroke-opacity="0.4" stroke-dasharray="3 2"/>
+    <text x="78" y="235" text-anchor="middle" class="cell">len-1</text>
+    <text x="122" y="235" text-anchor="middle" class="cell">dest</text>
+    <text x="159" y="235" text-anchor="middle" class="cell">id</text>
+    <text x="196" y="235" text-anchor="middle" class="cell">code</text>
+    <text x="261" y="235" text-anchor="middle" class="cell">payload</text>
+    <text x="78" y="256" text-anchor="middle" class="off">0</text>
+    <text x="122" y="256" text-anchor="middle" class="off">1</text>
+    <text x="159" y="256" text-anchor="middle" class="off">2</text>
+    <text x="196" y="256" text-anchor="middle" class="off">3</text>
+    <text x="261" y="256" text-anchor="middle" class="off">4.. (max 21)</text>
+  </g>
+  <text x="56" y="272" class="sans small">max 25 B total (0x19, SendTSnakeMessage)</text>
+
+  <!-- ============ ether.rs ============ -->
+  <rect x="40" y="300" width="280" height="150" rx="12" fill="#fbbf24" fill-opacity="0.07" stroke="#fbbf24" stroke-opacity="0.55"/>
+  <rect x="56" y="314" width="72" height="22" rx="11" fill="#fbbf24" fill-opacity="0.16"/>
+  <text x="92" y="329" text-anchor="middle" class="mono tag" fill="#fcd34d">ether.rs</text>
+  <text x="56" y="360" class="sans h">Ethernet header template</text>
+  <text x="56" y="378" class="mono small">SetEthernetHeaders (083a94f0)</text>
+  <g class="mono">
+    <rect x="56" y="390" width="74" height="26" rx="4" fill="#fbbf24" fill-opacity="0.20"/>
+    <rect x="132" y="390" width="74" height="26" rx="4" fill="#fbbf24" fill-opacity="0.20"/>
+    <rect x="208" y="390" width="46" height="26" rx="4" fill="#fbbf24" fill-opacity="0.20"/>
+    <rect x="256" y="390" width="48" height="26" rx="4" fill="#fbbf24" fill-opacity="0.10"/>
+    <text x="93" y="407" text-anchor="middle" class="cell">ff × 6</text>
+    <text x="169" y="407" text-anchor="middle" class="cell">base + i</text>
+    <text x="231" y="407" text-anchor="middle" class="cell">00 dd</text>
+    <text x="280" y="407" text-anchor="middle" class="cell">00 00</text>
+    <text x="93" y="428" text-anchor="middle" class="off">0..6 dst</text>
+    <text x="169" y="428" text-anchor="middle" class="off">6..12 src</text>
+    <text x="231" y="428" text-anchor="middle" class="off">12..14</text>
+    <text x="280" y="428" text-anchor="middle" class="off">14..16</text>
+  </g>
+  <text x="56" y="444" class="sans small">5 × 16 B entries · each 32-bit word byte-reversed</text>
+
+  <!-- ============ fpga.rs ============ -->
+  <rect x="360" y="128" width="260" height="322" rx="12" fill="#a78bfa" fill-opacity="0.07" stroke="#a78bfa" stroke-opacity="0.55"/>
+  <rect x="376" y="142" width="66" height="22" rx="11" fill="#a78bfa" fill-opacity="0.18"/>
+  <text x="409" y="157" text-anchor="middle" class="mono tag" fill="#c4b5fd">fpga.rs</text>
+  <text x="376" y="188" class="sans h">Host → FPGA command</text>
+  <text x="376" y="206" class="sans sub">fwrite to the FPGA device file (USB)</text>
+  <g class="mono code">
+    <text x="376" y="232"><tspan fill="#a78bfa">0..2 </tspan> total length, BE16</text>
+    <text x="376" y="250"><tspan fill="#a78bfa">2    </tspan> 0x02</text>
+    <text x="376" y="268"><tspan fill="#a78bfa">3..7 </tspan> total − 10, BE32</text>
+    <text x="376" y="286"><tspan fill="#a78bfa">7    </tspan> port index</text>
+    <text x="376" y="304"><tspan fill="#a78bfa">8    </tspan> endpoint 1d wr / 1c rd</text>
+    <text x="376" y="322"><tspan fill="#a78bfa">9    </tspan> 0x00</text>
+    <text x="376" y="340"><tspan fill="#a78bfa">10.. </tspan> Access payload</text>
+  </g>
+  <line x1="376" y1="356" x2="604" y2="356" stroke="#a78bfa" stroke-opacity="0.3"/>
+  <text x="376" y="376" class="sans small">Byte 10 mode: 0 read byte · 1 write byte</text>
+  <text x="376" y="392" class="sans small">2 read block · 3 write block</text>
+  <text x="376" y="418" class="mono code"><tspan fill="#5eead4">WriteBlock</tspan> → 0x0700 mailbox</text>
+  <text x="376" y="436" class="mono code"><tspan fill="#fcd34d">WriteBlock</tspan> → 0x0300 header RAM</text>
+
+  <!-- arrows into fpga.rs -->
+  <path d="M320,203 H352" stroke="#2dd4bf" stroke-width="2" fill="none" marker-end="url(#arr-teal)"/>
+  <path d="M320,375 H352" stroke="#fbbf24" stroke-width="2" fill="none" marker-end="url(#arr-amber)"/>
+
+  <!-- ============ FPGA ============ -->
+  <rect x="660" y="128" width="260" height="226" rx="12" fill="#38bdf8" fill-opacity="0.07" stroke="#38bdf8" stroke-opacity="0.55"/>
+  <rect x="676" y="142" width="52" height="22" rx="11" fill="#38bdf8" fill-opacity="0.18"/>
+  <text x="702" y="157" text-anchor="middle" class="mono tag" fill="#7dd3fc">FPGA</text>
+  <text x="676" y="188" class="sans h">Frame builder</text>
+  <text x="676" y="206" class="sans sub">FPGA logic, not visible in software</text>
+  <rect x="676" y="220" width="228" height="32" rx="6" fill="#fbbf24" fill-opacity="0.12" stroke="#fbbf24" stroke-opacity="0.4"/>
+  <text x="690" y="241" class="mono code"><tspan fill="#fcd34d">0x0300</tspan>  header RAM</text>
+  <rect x="676" y="260" width="228" height="32" rx="6" fill="#2dd4bf" fill-opacity="0.12" stroke="#2dd4bf" stroke-opacity="0.4"/>
+  <text x="690" y="281" class="mono code"><tspan fill="#5eead4">0x0700</tspan>  TX mailbox</text>
+  <rect x="676" y="300" width="228" height="32" rx="6" fill="#2dd4bf" fill-opacity="0.05" stroke="#2dd4bf" stroke-opacity="0.25" stroke-dasharray="3 2"/>
+  <text x="690" y="321" class="mono code"><tspan fill="#5eead4">0x0800</tspan> / <tspan fill="#5eead4">0x0801</tspan>  RX</text>
+
+  <!-- fpga.rs -> FPGA -->
+  <path d="M620,276 H652" stroke="#a78bfa" stroke-width="2" fill="none" marker-end="url(#arr-violet)"/>
+  <text x="640" y="266" text-anchor="middle" class="mono off" fill="#a78bfa">USB</text>
+
+  <!-- FPGA -> wire -->
+  <path d="M790,354 V374" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <rect x="660" y="380" width="260" height="70" rx="12" fill="#1e293b" stroke="#475569"/>
+  <text x="676" y="408" class="sans h">Wire</text>
+  <text x="676" y="430" class="sans sub">template + audio + message + FCS</text>
+
+  <!-- not visible note -->
+  <rect x="40" y="472" width="880" height="44" rx="10" fill="none" stroke="#475569" stroke-dasharray="5 4"/>
+  <text x="58" y="499" class="sans body"><tspan font-weight="700" fill="#f1f5f9">Not visible in software:</tspan> where the message sits in the frame, padding, CRC, the audio payload, the link rate.</text>
+
+  <!-- ============ ON THE WIRE ============ -->
+  <text x="40" y="556" class="sans sect">ON THE WIRE · THE SAME MESSAGE, TWO CARRIERS (FRAMES NOT TO SCALE)</text>
+
+  <!-- gigaACE panel -->
+  <rect x="40" y="570" width="430" height="320" rx="12" fill="#38bdf8" fill-opacity="0.05" stroke="#38bdf8" stroke-opacity="0.45"/>
+  <text x="60" y="600" class="sans h" fill="#7dd3fc">1 Gbit/s gigaACE · SLink</text>
+  <text x="60" y="619" class="sans sub">ah-gigaace · 1280 B frame, one per 96 kHz period</text>
+
+  <g class="mono">
+    <rect x="60" y="640" width="48" height="34" rx="4" fill="#334155"/>
+    <rect x="110" y="640" width="60" height="34" rx="4" fill="#38bdf8" fill-opacity="0.35" stroke="#38bdf8"/>
+    <rect x="172" y="640" width="140" height="34" rx="4" fill="#334155"/>
+    <rect x="314" y="640" width="96" height="34" rx="4" fill="#2dd4bf" fill-opacity="0.30" stroke="#2dd4bf"/>
+    <rect x="412" y="640" width="38" height="34" rx="4" fill="#334155"/>
+    <text x="84" y="661" text-anchor="middle" class="cell">hdr</text>
+    <text x="140" y="661" text-anchor="middle" class="cell">bridge</text>
+    <text x="242" y="661" text-anchor="middle" class="cell">audio lanes</text>
+    <text x="362" y="661" text-anchor="middle" class="cell">tail</text>
+    <text x="431" y="661" text-anchor="middle" class="cell">FCS</text>
+    <text x="60" y="690" class="off">0</text>
+    <text x="110" y="690" class="off">21</text>
+    <text x="172" y="690" class="off">24</text>
+    <text x="314" y="690" class="off">948</text>
+    <text x="412" y="690" class="off">1276</text>
+  </g>
+
+  <text x="60" y="720" class="sans body"><tspan fill="#7dd3fc" font-weight="600">bridge</tspan>  ChunkKind::Message = 5, length = message length</text>
+  <text x="60" y="740" class="sans body"><tspan fill="#5eead4" font-weight="600">tail</tspan>  one message from tail byte 0, plain, then zeros</text>
+
+  <text x="60" y="772" class="sans small">Discovery, first 6 of 16 bytes (message id 01):</text>
+  <g class="mono">
+    <rect x="60" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="98" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="136" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="174" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="212" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <rect x="250" y="782" width="34" height="28" rx="4" fill="#2dd4bf" fill-opacity="0.22"/>
+    <text x="77" y="801" text-anchor="middle" class="cell">0f</text>
+    <text x="115" y="801" text-anchor="middle" class="cell">ff</text>
+    <text x="153" y="801" text-anchor="middle" class="cell">01</text>
+    <text x="191" y="801" text-anchor="middle" class="cell">02</text>
+    <text x="229" y="801" text-anchor="middle" class="cell">44</text>
+    <text x="267" y="801" text-anchor="middle" class="cell">69</text>
+    <text x="296" y="801" class="cell" fill="#94a3b8">…  "DiscoveryV2"</text>
+  </g>
+  <text x="60" y="840" class="sans small">Bytes exactly as ah-snake encodes them.</text>
+  <text x="60" y="858" class="sans small">SQ-5 capture: Discovery every 0.996 s,</text>
+  <text x="60" y="876" class="sans small">one Channel Names every 79.8 ms.</text>
+
+  <!-- dSNAKE panel -->
+  <rect x="490" y="570" width="430" height="320" rx="12" fill="#fb7185" fill-opacity="0.05" stroke="#fb7185" stroke-opacity="0.45"/>
+  <text x="510" y="600" class="sans h" fill="#fda4af">100 Mbit/s dSNAKE / ME-1</text>
+  <text x="510" y="619" class="sans sub">ah-dsnake · ah-me · 239 B frame, one per 48 kHz period</text>
+
+  <g class="mono">
+    <rect x="510" y="640" width="76" height="34" rx="4" fill="#fbbf24" fill-opacity="0.18"/>
+    <rect x="588" y="640" width="34" height="34" rx="4" fill="#334155"/>
+    <rect x="624" y="640" width="136" height="34" rx="4" fill="#334155"/>
+    <rect x="762" y="640" width="98" height="34" rx="4" fill="#fb7185" fill-opacity="0.30" stroke="#fb7185"/>
+    <rect x="862" y="640" width="38" height="34" rx="4" fill="#334155"/>
+    <text x="548" y="661" text-anchor="middle" class="cell">template</text>
+    <text x="605" y="661" text-anchor="middle" class="cell">ctr</text>
+    <text x="692" y="661" text-anchor="middle" class="cell">audio 192 B</text>
+    <text x="811" y="661" text-anchor="middle" class="cell">control</text>
+    <text x="881" y="661" text-anchor="middle" class="cell">FCS</text>
+    <text x="510" y="690" class="off">0</text>
+    <text x="588" y="690" class="off">16</text>
+    <text x="624" y="690" class="off">17</text>
+    <text x="762" y="690" class="off">209</text>
+    <text x="862" y="690" class="off">235</text>
+  </g>
+
+  <text x="510" y="720" class="sans body"><tspan fill="#fda4af" font-weight="600">control</tspan>  26 B, one message per frame</text>
+  <text x="510" y="740" class="sans body">byte 0 |= 0x40 (present), every byte nibble-swapped</text>
+
+  <text x="510" y="772" class="sans small">The same 6 bytes on the wire:</text>
+  <g class="mono">
+    <rect x="510" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <rect x="548" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <rect x="586" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <rect x="624" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <rect x="662" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <rect x="700" y="782" width="34" height="28" rx="4" fill="#fb7185" fill-opacity="0.24"/>
+    <text x="527" y="801" text-anchor="middle" class="cell">f4</text>
+    <text x="565" y="801" text-anchor="middle" class="cell">ff</text>
+    <text x="603" y="801" text-anchor="middle" class="cell">10</text>
+    <text x="641" y="801" text-anchor="middle" class="cell">20</text>
+    <text x="679" y="801" text-anchor="middle" class="cell">44</text>
+    <text x="717" y="801" text-anchor="middle" class="cell">96</text>
+    <text x="746" y="801" class="cell" fill="#94a3b8">…</text>
+  </g>
+  <text x="510" y="840" class="sans small">0f | 40 = 4f → swap → f4. The receiver swaps back</text>
+  <text x="510" y="858" class="sans small">and clears bit 6. The ME-1 reads the same block</text>
+  <text x="510" y="876" class="sans small">at frame bytes 0xD1..0xE1.</text>
+</svg>
